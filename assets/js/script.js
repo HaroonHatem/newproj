@@ -1,0 +1,48 @@
+
+document.addEventListener('DOMContentLoaded', function(){
+  // jobs search
+  var jobSearch = document.getElementById('job-search');
+  if(jobSearch){
+    jobSearch.addEventListener('input', function(){
+      var q = jobSearch.value.trim();
+      fetch('search_jobs.php?ajax=1&q='+encodeURIComponent(q)).then(r=>r.json()).then(data=>{
+        var list = document.getElementById('jobs-list');
+        if(!list) return;
+        if(data.length===0) list.innerHTML='<p>لا توجد نتائج.</p>'; else {
+          list.innerHTML='';
+          data.forEach(function(it){
+            var div = document.createElement('div'); div.className='job-card card';
+            div.innerHTML = '<h3>'+escapeHtml(it.title)+'</h3><div class="meta">'+escapeHtml(it.company)+' • '+escapeHtml(it.location)+'</div><p>'+escapeHtml(it.description)+'</p>';
+            div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+            list.appendChild(div);
+          });
+        }
+      });
+    });
+    document.getElementById('clear-search').addEventListener('click', function(){ jobSearch.value=''; jobSearch.dispatchEvent(new Event('input')); });
+  }
+  // grads search
+  var gradSearch = document.getElementById('grad-search');
+  if(gradSearch){
+    gradSearch.addEventListener('input', function(){
+      var q = gradSearch.value.trim();
+      fetch('search_graduates.php?ajax=1&q='+encodeURIComponent(q)).then(r=>r.json()).then(data=>{
+        var list = document.getElementById('grads-list');
+        if(!list) return;
+        if(data.length===0) list.innerHTML='<p>لا توجد نتائج.</p>'; else {
+          list.innerHTML='';
+          data.forEach(function(it){
+            var div = document.createElement('div'); div.className='grad-card card';
+            div.innerHTML = '<h3>'+escapeHtml(it.name)+'</h3><div class="meta">'+escapeHtml(it.university)+' • '+escapeHtml(it.specialization)+'</div><p>الهاتف: '+escapeHtml(it.phone)+'</p>';
+            if(it.cv_link) div.innerHTML += '<a class="btn btn-apply" href="'+escapeHtml(it.cv_link)+'" target="_blank">عرض السيرة (رابط)</a>';
+            else if(it.cv_file) div.innerHTML += '<a class="btn btn-apply" href="'+escapeHtml(it.cv_file)+'" target="_blank">عرض السيرة (ملف)</a>';
+            list.appendChild(div);
+          });
+        }
+      });
+    });
+    document.getElementById('clear-grad').addEventListener('click', function(){ gradSearch.value=''; gradSearch.dispatchEvent(new Event('input')); });
+  }
+});
+
+function escapeHtml(text){ var map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;" }; return String(text).replace(/[&<>"']/g, function(m){ return map[m]; }); }
