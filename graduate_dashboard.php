@@ -17,6 +17,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode($out);
+    echo json_encode($out);
     exit();
 }
 
