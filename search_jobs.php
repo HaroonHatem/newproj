@@ -46,6 +46,10 @@ $result = $conn->query($sql);
                           else: ?><p>لا توجد وظائف.</p><?php endif; ?></div>
     </div>
   </main>
+  <script>
+    window.USER_TYPE = '<?php echo isset($_SESSION['user_type']) ? $_SESSION['user_type'] : 'guest'; ?>';
+    window.IS_LOGGED_IN = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
+  </script>
   <script src='assets/js/script.js'></script>
 </body>
 

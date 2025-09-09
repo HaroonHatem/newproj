@@ -39,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = $stmt2->insert_id;
         $_SESSION['user_name'] = $name;
         $_SESSION['user_type'] = $user_type;
+        $_SESSION['user_email'] = $email;
+        $_SESSION['is_admin'] = in_array(strtolower($email), ['haroonhatem34@gmail.com','hamzahmisr@gmail.com']);
         header('Location: graduate_dashboard.php');
         exit();
       } else $error = 'خطأ أثناء التسجيل';

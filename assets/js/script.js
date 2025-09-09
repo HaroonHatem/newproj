@@ -5,7 +5,8 @@ document.addEventListener('DOMContentLoaded', function(){
   if(jobSearch){
     jobSearch.addEventListener('input', function(){
       var q = jobSearch.value.trim();
-      fetch('search_jobs.php?ajax=1&q='+encodeURIComponent(q)).then(r=>r.json()).then(data=>{
+      var url = 'search_jobs.php?ajax=1&t=' + Date.now() + '&q=' + encodeURIComponent(q);
+      fetch(url).then(r=>r.json()).then(data=>{
         var list = document.getElementById('jobs-list');
         if(!list) return;
         if(data.length===0) list.innerHTML='<p>لا توجد نتائج.</p>'; else {
@@ -13,7 +14,13 @@ document.addEventListener('DOMContentLoaded', function(){
           data.forEach(function(it){
             var div = document.createElement('div'); div.className='job-card card';
             div.innerHTML = '<h3>'+escapeHtml(it.title)+'</h3><div class="meta">'+escapeHtml(it.company)+' • '+escapeHtml(it.location)+'</div><p>'+escapeHtml(it.description)+'</p>';
-            div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+            var utype = (typeof window !== 'undefined' && window.USER_TYPE) ? window.USER_TYPE : 'guest';
+            var isLogged = (typeof window !== 'undefined' && window.IS_LOGGED_IN) ? window.IS_LOGGED_IN : false;
+            if (utype === 'graduate') {
+              div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+            } else if (!isLogged) {
+              div.innerHTML += '<a class="btn" href="login.php">دخول للتقديم</a>';
+            }
             list.appendChild(div);
           });
         }

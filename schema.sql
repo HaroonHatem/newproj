@@ -1,6 +1,6 @@
 -- schema for job_portal_new
-CREATE DATABASE IF NOT EXISTS `job_portal_new` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE `job_portal_new`;
+CREATE DATABASE IF NOT EXISTS `newproj` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE `newproj`;
 
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,

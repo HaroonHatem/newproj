@@ -14,8 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $_SESSION['user_id'] = $user['id'];
       $_SESSION['user_name'] = $user['name'];
       $_SESSION['user_type'] = $user['user_type'];
+      $_SESSION['user_email'] = $user['email'];
+      $_SESSION['is_admin'] = in_array(strtolower($user['email']), ['haroonhatem34@gmail.com','hamzahmisr@gmail.com']);
       if ($user['user_type'] === 'graduate') header('Location: graduate_dashboard.php');
-      else header('Location: employer_dashboard.php');
+      else header('Location: index.php');
       exit();
     } else $error = 'كلمة المرور غير صحيحة';
   } else $error = 'البريد غير مسجل';
