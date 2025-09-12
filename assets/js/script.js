@@ -40,7 +40,18 @@ document.addEventListener('DOMContentLoaded', function(){
           list.innerHTML='';
           data.forEach(function(it){
             var div = document.createElement('div'); div.className='grad-card card';
-            div.innerHTML = '<h3>'+escapeHtml(it.name)+'</h3><div class="meta">'+escapeHtml(it.university)+' • '+escapeHtml(it.specialization)+'</div><p>الهاتف: '+escapeHtml(it.phone)+'</p>';
+            
+            // Create verification badge
+            var verificationBadge = '';
+            if(it.is_verified == 1) {
+              verificationBadge = '<span class="verification-badge verified">✓ محقق</span>';
+            } else if(it.verification_status === 'pending') {
+              verificationBadge = '<span class="verification-badge pending">⏳ قيد المراجعة</span>';
+            } else {
+              verificationBadge = '<span class="verification-badge unverified">غير محقق</span>';
+            }
+            
+            div.innerHTML = '<div class="grad-header"><h3>'+escapeHtml(it.name)+'</h3>'+verificationBadge+'</div><div class="meta">'+escapeHtml(it.university)+' • '+escapeHtml(it.specialization)+'</div><p>الهاتف: '+escapeHtml(it.phone)+'</p>';
             if(it.cv_link) div.innerHTML += '<a class="btn btn-apply" href="'+escapeHtml(it.cv_link)+'" target="_blank">عرض السيرة (رابط)</a>';
             else if(it.cv_file) div.innerHTML += '<a class="btn btn-apply" href="'+escapeHtml(it.cv_file)+'" target="_blank">عرض السيرة (ملف)</a>';
             list.appendChild(div);

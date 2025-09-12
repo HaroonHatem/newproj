@@ -15,8 +15,17 @@ $stmt->bind_param('ii', $job_id, $company_id);
 $stmt->execute();
 $res = $stmt->get_result();
 if ($res->num_rows === 0) die('لا تملك هذه الوظيفة');
-$stmt2 = $conn->prepare('SELECT applications.*, users.name, users.email, users.phone, users.cv_file, users.cv_link FROM applications JOIN users ON applications.user_id=users.id WHERE applications.job_id=? ORDER BY applications.applied_at DESC');
-$stmt2->bind_param('i', $job_id);
+$stmt2 = $conn->prepare('
+    SELECT applications.*, users.name, users.email, users.phone, users.cv_file, users.cv_link, 
+           cc.id as conversation_id,
+           (SELECT COUNT(*) FROM chat_messages cm WHERE cm.conversation_id = cc.id AND cm.sender_id != ? AND cm.is_read = 0) as unread_count
+    FROM applications 
+    JOIN users ON applications.user_id=users.id 
+    LEFT JOIN chat_conversations cc ON applications.job_id = cc.job_id AND applications.user_id = cc.graduate_id
+    WHERE applications.job_id=? 
+    ORDER BY applications.applied_at DESC
+');
+$stmt2->bind_param('ii', $company_id, $job_id);
 $stmt2->execute();
 $apps = $stmt2->get_result(); ?>
 <!DOCTYPE html>
@@ -38,6 +47,7 @@ $apps = $stmt2->get_result(); ?>
                         <th>الهاتف</th>
                         <th>السيرة</th>
                         <th>التاريخ</th>
+                        <th>المحادثة</th>
                     </tr><?php while ($a = $apps->fetch_assoc()): ?><tr>
                             <td><?php echo htmlspecialchars($a['name']); ?></td>
                             <td><?php echo htmlspecialchars($a['email']); ?></td>
@@ -46,6 +56,20 @@ $apps = $stmt2->get_result(); ?>
                                             elseif (!empty($a['cv_file'])) echo "<a href='" . htmlspecialchars($a['cv_file']) . "' target='_blank'>ملف</a>";
                                             else echo '-'; ?></td>
                             <td><?php echo $a['applied_at']; ?></td>
+                            <td>
+                                <?php if ($a['conversation_id']): ?>
+                                    <a href="chat.php?conversation_id=<?php echo $a['conversation_id']; ?>" class="btn btn-apply">
+                                        محادثة
+                                        <?php if ($a['unread_count'] > 0): ?>
+                                            <span style="background: #dc3545; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-right: 5px;">
+                                                <?php echo $a['unread_count']; ?>
+                                            </span>
+                                        <?php endif; ?>
+                                    </a>
+                                <?php else: ?>
+                                    <span style="color: #666;">لم تبدأ بعد</span>
+                                <?php endif; ?>
+                            </td>
                         </tr><?php endwhile; ?>
                 </table><?php else: ?><p>لا يوجد متقدمين.</p><?php endif; ?>
         </div>

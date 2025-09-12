@@ -118,8 +118,192 @@
     color:#c0392b}
 .success{
     color:#27ae60}
+
+/* Verification Status Styles */
+.verification-status {
+    border-left: 4px solid var(--accent);
+}
+
+.status-verified {
+    background: #d4edda;
+    color: #155724;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.status-icon {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.info-text {
+    color: var(--muted);
+    font-size: 14px;
+    margin: 5px 0;
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Verification Request Styles */
+.verification-request {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    background: #f9f9f9;
+}
+
+.request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.request-date {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.request-details p {
+    margin: 8px 0;
+}
+
+.verification-actions {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-success {
+    background: #28a745;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Verification Badge Styles */
+.grad-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.verification-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.verification-badge.verified {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.verification-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.verification-badge.unverified {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Company Information Styles */
+.company-info {
+    padding: 15px 0;
+}
+
+.company-info p {
+    margin: 8px 0;
+    font-size: 16px;
+}
+
 @media(
     max-width:700px)
     {.topbar{
         flex-direction:column;
-        align-items:flex-start}.cards-grid{grid-template-columns:1fr}}
+        align-items:flex-start}.cards-grid{grid-template-columns:1fr}
+    .action-buttons {
+        flex-direction: column;
+    }
+    .request-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .grad-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }}

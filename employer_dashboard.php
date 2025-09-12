@@ -6,6 +6,13 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'company') {
     exit();  
 }
 $company_id = $_SESSION['user_id'];
+
+// Get company verification status and details
+$stmt = $conn->prepare('SELECT is_verified, verification_status, name, company_location FROM users WHERE id = ?');
+$stmt->bind_param('i', $company_id);
+$stmt->execute();
+$user_result = $stmt->get_result();
+$user_data = $user_result->fetch_assoc();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_job'])) {
     $title = trim($_POST['title']);
     $location = trim($_POST['location']);
@@ -34,6 +41,42 @@ $jobs = $stmt->get_result(); ?>
 </head>
 
 <body><?php include 'navbar.php'; ?><main class='container'>
+        <?php if (isset($_SESSION['message'])): ?>
+            <div class="card success-message">
+                <p><?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></p>
+            </div>
+        <?php endif; ?>
+        
+        <!-- Company Information Card -->
+        <div class="card">
+            <h2>معلومات الشركة</h2>
+            <div class="company-info">
+                <p><strong>اسم الشركة:</strong> <?php echo htmlspecialchars($user_data['name']); ?></p>
+                <p><strong>موقع الشركة:</strong> <?php echo htmlspecialchars($user_data['company_location']); ?></p>
+            </div>
+        </div>
+        
+        <!-- Verification Status Card -->
+        <div class="card verification-status">
+            <h2>حالة التحقق من الهوية</h2>
+            <?php if ($user_data['is_verified']): ?>
+                <div class="status-verified">
+                    <span class="status-icon">✓</span>
+                    <p>تم التحقق من هوية الشركة بنجاح</p>
+                </div>
+            <?php elseif ($user_data['verification_status'] === 'pending'): ?>
+                <div class="status-pending">
+                    <span class="status-icon">⏳</span>
+                    <p>طلب التحقق من الهوية قيد المراجعة</p>
+                </div>
+            <?php elseif ($user_data['verification_status'] === 'rejected'): ?>
+                <div class="status-rejected">
+                    <span class="status-icon">✗</span>
+                    <p>تم رفض طلب التحقق من الهوية. يرجى التواصل مع الإدارة</p>
+                </div>
+            <?php endif; ?>
+        </div>
+        
         <div class='card'>
             <h2>إضافة وظيفة</h2><?php if (!empty($error)) echo '<p class="error">' . htmlspecialchars($error) . '</p>'; ?><form method='post'><input class='input' name='title' placeholder='عنوان الوظيفة' required><input class='input' name='location' placeholder='الموقع'><textarea class='input' name='description' placeholder='وصف الوظيفة' required></textarea><button class='btn btn-primary' name='add_job' type='submit'>إضافة</button></form>
         </div>
