@@ -3,7 +3,7 @@ session_start();
 include 'db.php';
 if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'company') {
     header('Location: login.php');
-    exit();
+    exit();  
 }
 $company_id = $_SESSION['user_id'];
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_job'])) {
