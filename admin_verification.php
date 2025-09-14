@@ -171,6 +171,12 @@ $all_company_requests = $stmt4->get_result();
 <body>
     <?php include 'navbar.php'; ?>
     <main class="container">
+        <!-- Welcome Message -->
+        <div class="card welcome-message">
+            <h1>مرحباً <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
+            <p>مرحباً بك في لوحة إدارة طلبات التحقق. يمكنك هنا مراجعة وموافقة أو رفض طلبات التحقق من الهوية.</p>
+        </div>
+        
         <?php if (isset($_SESSION['message'])): ?>
             <div class="card success-message">
                 <p><?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></p>

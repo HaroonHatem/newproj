@@ -16,9 +16,19 @@ $conversation_id = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
     $message = trim($_POST['message']);
     if (!empty($message) && $conversation_id > 0) {
+        // Debug: Log the message length and content
+        error_log("Chat message length: " . strlen($message) . ", content: " . substr($message, 0, 100));
+        
         $stmt = $conn->prepare('INSERT INTO chat_messages (conversation_id, sender_id, message) VALUES (?, ?, ?)');
         $stmt->bind_param('iis', $conversation_id, $user_id, $message);
-        $stmt->execute();
+        $result = $stmt->execute();
+        
+        if (!$result) {
+            error_log("Chat message insert error: " . $stmt->error);
+            $_SESSION['chat_error'] = 'فشل في إرسال الرسالة: ' . $stmt->error;
+        } else {
+            $_SESSION['chat_success'] = 'تم إرسال الرسالة بنجاح';
+        }
         
         // Mark conversation as updated
         $stmt2 = $conn->prepare('UPDATE chat_conversations SET updated_at = NOW() WHERE id = ?');
@@ -134,7 +144,7 @@ if ($conversation_id > 0) {
             background: #e9ecef;
         }
         .conversation-item.active {
-            background: #007bff;
+            background: var(--accent);
             color: white;
         }
         .conversation-title {
@@ -160,7 +170,7 @@ if ($conversation_id > 0) {
         }
         .chat-header {
             padding: 15px;
-            background: #007bff;
+            background: var(--accent);
             color: white;
             font-weight: bold;
         }
@@ -188,13 +198,32 @@ if ($conversation_id > 0) {
             word-wrap: break-word;
         }
         .message.sent .message-bubble {
-            background: #007bff;
+            background: var(--accent);
             color: white;
         }
         .message.received .message-bubble {
             background: white;
             color: #333;
             border: 1px solid #ddd;
+        }
+        .message-sender {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .message.sent .message-sender {
+            text-align: right;
+            color: var(--accent);
+        }
+        .message.received .message-sender {
+            text-align: left;
+            color: var(--bg1);
+        }
+        .sender-type {
+            font-size: 10px;
+            font-weight: normal;
+            opacity: 0.7;
         }
         .message-time {
             font-size: 11px;
@@ -219,11 +248,28 @@ if ($conversation_id > 0) {
         }
         .send-button {
             padding: 10px 20px;
-            background: #007bff;
+            background: var(--accent);
             color: white;
             border: none;
             border-radius: 20px;
             cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .send-button:hover {
+            background: var(--bg1);
+        }
+        .return-button {
+            background-color: var(--accent);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+        .return-button:hover {
+            background-color: var(--bg1);
+            color: white;
+            text-decoration: none;
         }
         .no-conversation {
             display: flex;
@@ -249,7 +295,24 @@ if ($conversation_id > 0) {
     <?php include 'navbar.php'; ?>
     <main class="container">
         <div class="card">
-            <h2>المحادثات</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>المحادثات</h2>
+                <a href="index.php" class="return-button">
+                    ← العودة للصفحة الرئيسية
+                </a>
+            </div>
+            
+            <?php if (isset($_SESSION['chat_error'])): ?>
+                <div class="card" style="background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; margin-bottom: 15px;">
+                    <p><?php echo htmlspecialchars($_SESSION['chat_error']); unset($_SESSION['chat_error']); ?></p>
+                </div>
+            <?php endif; ?>
+            
+            <?php if (isset($_SESSION['chat_success'])): ?>
+                <div class="card" style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; margin-bottom: 15px;">
+                    <p><?php echo htmlspecialchars($_SESSION['chat_success']); unset($_SESSION['chat_success']); ?></p>
+                </div>
+            <?php endif; ?>
             <div class="chat-container">
                 <div class="conversations-list">
                     <?php if ($conversations->num_rows > 0): ?>
@@ -310,6 +373,14 @@ if ($conversation_id > 0) {
                             <?php if ($messages->num_rows > 0): ?>
                                 <?php while ($message = $messages->fetch_assoc()): ?>
                                     <div class="message <?php echo ($message['sender_id'] == $user_id) ? 'sent' : 'received'; ?>">
+                                        <div class="message-sender">
+                                            <?php echo htmlspecialchars($message['sender_name']); ?>
+                                            <?php if ($message['user_type'] == 'graduate'): ?>
+                                                <span class="sender-type">(خريج)</span>
+                                            <?php else: ?>
+                                                <span class="sender-type">(شركة)</span>
+                                            <?php endif; ?>
+                                        </div>
                                         <div class="message-bubble">
                                             <?php echo nl2br(htmlspecialchars($message['message'])); ?>
                                         </div>
@@ -328,7 +399,7 @@ if ($conversation_id > 0) {
                         <div class="message-input-area">
                             <form method="post" class="message-input-form">
                                 <input type="hidden" name="conversation_id" value="<?php echo $conversation_id; ?>">
-                                <textarea name="message" class="message-input" placeholder="اكتب رسالتك هنا..." required></textarea>
+                                <textarea name="message" class="message-input" placeholder="اكتب رسالتك هنا..." required maxlength="2000" rows="3"></textarea>
                                 <button type="submit" name="send_message" class="send-button">إرسال</button>
                             </form>
                         </div>
@@ -354,12 +425,44 @@ if ($conversation_id > 0) {
         // Scroll to bottom on page load
         window.addEventListener('load', scrollToBottom);
         
-        // Auto-refresh messages every 5 seconds
+        // Handle form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('.message-input-form');
+            const textarea = document.querySelector('.message-input');
+            
+            if (form && textarea) {
+                form.addEventListener('submit', function(e) {
+                    const message = textarea.value.trim();
+                    if (message.length === 0) {
+                        e.preventDefault();
+                        alert('يرجى كتابة رسالة');
+                        return false;
+                    }
+                    if (message.length > 2000) {
+                        e.preventDefault();
+                        alert('الرسالة طويلة جداً. الحد الأقصى 2000 حرف');
+                        return false;
+                    }
+                    // Don't clear the textarea here - let the server handle it
+                });
+                
+                // Auto-resize textarea
+                textarea.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+                });
+            }
+        });
+        
+        // Auto-refresh messages every 10 seconds (less frequent to avoid data loss)
         setInterval(function() {
             if (<?php echo $conversation_id; ?> > 0) {
-                location.reload();
+                const textarea = document.querySelector('.message-input');
+                if (textarea && textarea.value.trim() === '') {
+                    location.reload();
+                }
             }
-        }, 5000);
+        }, 10000);
     </script>
 </body>
 </html>

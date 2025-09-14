@@ -307,3 +307,103 @@
         align-items: flex-start;
         gap: 8px;
     }}
+
+/* Welcome Message Styling */
+.welcome-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+    margin-bottom: 25px;
+    border: none;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.15);
+}
+
+.welcome-message h1 {
+    margin: 0 0 10px 0;
+    font-size: 2.2em;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.welcome-message p {
+    margin: 0;
+    font-size: 1.1em;
+    opacity: 0.95;
+    line-height: 1.6;
+}
+
+/* User role indicator in navbar */
+.topbar .menu li[style*="color: #2c3e50"] {
+    background: rgba(255,255,255,0.1);
+    border-radius: 8px;
+    margin-right: 10px;
+}
+
+/* Disabled Feature Styling */
+.disabled-feature {
+    background: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    opacity: 0.7;
+}
+
+.disabled-message {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.disabled-icon {
+    font-size: 3em;
+    display: block;
+    margin-bottom: 15px;
+    opacity: 0.6;
+}
+
+.disabled-message p {
+    margin: 10px 0;
+    font-size: 1.1em;
+    line-height: 1.5;
+}
+
+.disabled-message p:first-of-type {
+    font-weight: bold;
+    color: #495057;
+}
+
+/* Application Status Styling */
+.application-status {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.status-badge.applied {
+    background-color: #28a745;
+    color: white;
+}
+
+.status-badge.pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.status-badge.accepted {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.status-badge.rejected {
+    background-color: #dc3545;
+    color: white;
+}

@@ -171,3 +171,6 @@ $admin_emails = ['haroonhatem34@gmail.com', 'hamzahmisr@gmail.com'];
 
 **تم التطوير بواسطة**: فريق تطوير بوابة التوظيف
 **آخر تحديث**: ديسمبر 2024
+
+
+

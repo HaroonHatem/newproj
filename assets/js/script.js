@@ -17,7 +17,11 @@ document.addEventListener('DOMContentLoaded', function(){
             var utype = (typeof window !== 'undefined' && window.USER_TYPE) ? window.USER_TYPE : 'guest';
             var isLogged = (typeof window !== 'undefined' && window.IS_LOGGED_IN) ? window.IS_LOGGED_IN : false;
             if (utype === 'graduate') {
-              div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+              if (it.has_applied) {
+                div.innerHTML += '<div class="application-status"><span class="status-badge applied">✓ تم التقديم</span><p style="color: #666; font-size: 14px; margin: 5px 0;">لقد قدمت لهذه الوظيفة من قبل</p></div>';
+              } else {
+                div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+              }
             } else if (!isLogged) {
               div.innerHTML += '<a class="btn" href="login.php">دخول للتقديم</a>';
             }

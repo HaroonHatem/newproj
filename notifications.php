@@ -163,3 +163,4 @@ $unread_count = $stmt2->get_result()->fetch_assoc()['unread_count'];
     </main>
 </body>
 </html>
+

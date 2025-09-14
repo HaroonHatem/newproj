@@ -14,17 +14,22 @@ $stmt->execute();
 $user_result = $stmt->get_result();
 $user_data = $user_result->fetch_assoc();
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_job'])) {
-    $title = trim($_POST['title']);
-    $location = trim($_POST['location']);
-    $description = trim($_POST['description']);
-    if ($title && $description) {
-        $stmt = $conn->prepare('INSERT INTO jobs (company_id,title,description,location) VALUES (?,?,?,?)');
-        $stmt->bind_param('isss', $company_id, $title, $description, $location);
-        $stmt->execute();
-        $_SESSION['message'] = 'تمت إضافة الوظيفة';
-        header('Location: employer_dashboard.php');
-        exit();
-    } else $error = 'املأ الحقول';
+    // Check if company is verified before allowing job creation
+    if (!$user_data['is_verified']) {
+        $error = 'لا يمكنك إضافة الوظائف حتى يتم التحقق من هوية شركتك';
+    } else {
+        $title = trim($_POST['title']);
+        $location = trim($_POST['location']);
+        $description = trim($_POST['description']);
+        if ($title && $description) {
+            $stmt = $conn->prepare('INSERT INTO jobs (company_id,title,description,location) VALUES (?,?,?,?)');
+            $stmt->bind_param('isss', $company_id, $title, $description, $location);
+            $stmt->execute();
+            $_SESSION['message'] = 'تمت إضافة الوظيفة';
+            header('Location: employer_dashboard.php');
+            exit();
+        } else $error = 'املأ الحقول';
+    }
 }
 $stmt = $conn->prepare('SELECT * FROM jobs WHERE company_id=? ORDER BY created_at DESC');
 $stmt->bind_param('i', $company_id);
@@ -41,6 +46,12 @@ $jobs = $stmt->get_result(); ?>
 </head>
 
 <body><?php include 'navbar.php'; ?><main class='container'>
+        <!-- Welcome Message -->
+        <div class="card welcome-message">
+            <h1>مرحباً <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
+            <p>مرحباً بك في لوحة الشركة. يمكنك هنا إدارة الوظائف والبحث عن الخريجين المناسبين.</p>
+        </div>
+        
         <?php if (isset($_SESSION['message'])): ?>
             <div class="card success-message">
                 <p><?php echo htmlspecialchars($_SESSION['message']); unset($_SESSION['message']); ?></p>
@@ -62,24 +73,49 @@ $jobs = $stmt->get_result(); ?>
             <?php if ($user_data['is_verified']): ?>
                 <div class="status-verified">
                     <span class="status-icon">✓</span>
-                    <p>تم التحقق من هوية الشركة بنجاح</p>
+                    <p>تم التحقق من هوية الشركة بنجاح - يمكنك الآن إضافة الوظائف</p>
                 </div>
             <?php elseif ($user_data['verification_status'] === 'pending'): ?>
                 <div class="status-pending">
                     <span class="status-icon">⏳</span>
-                    <p>طلب التحقق من الهوية قيد المراجعة</p>
+                    <p>طلب التحقق من الهوية قيد المراجعة - يرجى الانتظار حتى يتم الموافقة على حسابك</p>
                 </div>
             <?php elseif ($user_data['verification_status'] === 'rejected'): ?>
                 <div class="status-rejected">
                     <span class="status-icon">✗</span>
-                    <p>تم رفض طلب التحقق من الهوية. يرجى التواصل مع الإدارة</p>
+                    <p>تم رفض طلب التحقق من الهوية. يرجى التواصل مع الإدارة لإعادة التقديم</p>
+                </div>
+            <?php else: ?>
+                <div class="status-pending">
+                    <span class="status-icon">⏳</span>
+                    <p>لم يتم تقديم طلب التحقق بعد - يرجى تقديم طلب التحقق أولاً</p>
                 </div>
             <?php endif; ?>
         </div>
         
+        <?php if ($user_data['is_verified']): ?>
+        <!-- Job Creation Form - Only show if verified -->
         <div class='card'>
-            <h2>إضافة وظيفة</h2><?php if (!empty($error)) echo '<p class="error">' . htmlspecialchars($error) . '</p>'; ?><form method='post'><input class='input' name='title' placeholder='عنوان الوظيفة' required><input class='input' name='location' placeholder='الموقع'><textarea class='input' name='description' placeholder='وصف الوظيفة' required></textarea><button class='btn btn-primary' name='add_job' type='submit'>إضافة</button></form>
+            <h2>إضافة وظيفة</h2>
+            <?php if (!empty($error)) echo '<p class="error">' . htmlspecialchars($error) . '</p>'; ?>
+            <form method='post'>
+                <input class='input' name='title' placeholder='عنوان الوظيفة' required>
+                <input class='input' name='location' placeholder='الموقع'>
+                <textarea class='input' name='description' placeholder='وصف الوظيفة' required></textarea>
+                <button class='btn btn-primary' name='add_job' type='submit'>إضافة</button>
+            </form>
         </div>
+        <?php else: ?>
+        <!-- Disabled Job Creation - Show when not verified -->
+        <div class='card disabled-feature'>
+            <h2>إضافة وظيفة</h2>
+            <div class="disabled-message">
+                <span class="disabled-icon">🔒</span>
+                <p>لا يمكنك إضافة الوظائف حتى يتم التحقق من هوية شركتك</p>
+                <p>يرجى انتظار موافقة الإدارة على طلب التحقق</p>
+            </div>
+        </div>
+        <?php endif; ?>
         <div class='card'>
             <h2>وظائفك المنشورة</h2><?php if (isset($_SESSION['message'])) {
                                         echo '<p class="success">' . htmlspecialchars($_SESSION['message']) . '</p>';
