@@ -61,7 +61,7 @@ include 'db.php'; ?>
       </a>
       <a class="card card-2" href="search_graduates.php">
         <div class="icon">🎓</div>
-        <h3>بحث عن خريجين</h3>
+        <h3>الخريجين</h3>
         <p>لأصحاب العمل: اعثر على المتقدمين</p>
       </a>
       <a class="card card-3" href="chat.php">
