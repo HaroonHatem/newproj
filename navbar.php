@@ -8,15 +8,32 @@ if (session_status() == PHP_SESSION_NONE) session_start();
     <?php if(isset($_SESSION['user_id'])): ?>
     <div style="display: flex; gap: 15px;">
       <li><a href="index.php">الرئيسية</a></li>
-      <?php if($_SESSION['user_type'] != 'company'): ?>
+      <?php if(empty($_SESSION['is_admin']) && $_SESSION['user_type'] != 'company'): ?>
+      <?php
+        // if graduate, show link but mark disabled if not verified
+        $can_apply_nav = true;
+        if ($_SESSION['user_type'] === 'graduate') {
+          include_once 'db.php';
+          $st = $conn->prepare('SELECT is_verified, verification_status FROM users WHERE id=?');
+          $st->bind_param('i', $_SESSION['user_id']);
+          $st->execute();
+          $ud = $st->get_result()->fetch_assoc();
+          $can_apply_nav = ($ud && (int)$ud['is_verified'] === 1 && $ud['verification_status'] === 'approved');
+        }
+      ?>
+      <?php if($can_apply_nav): ?>
       <li><a href="search_jobs.php">بحث عن وظائف</a></li>
+      <?php else: ?>
+      <li><span style="opacity:.6; cursor:not-allowed;">بحث عن وظائف (بانتظار التحقق)</span></li>
       <?php endif; ?>
-      <?php if($_SESSION['user_type'] != 'graduate'): ?>
+      <?php endif; ?>
+      <?php if(empty($_SESSION['is_admin']) && $_SESSION['user_type'] != 'graduate'): ?>
       <li><a href="search_graduates.php">بحث عن خريجين</a></li>
       <?php endif; ?>
       <li><a href="chat.php" style="background-color:#28a745; color:white; padding:5px 10px; border-radius:5px;">المحادثات</a></li>
-      <li><a href="notifications.php" style="background-color:#ffc107; color:black; padding:5px 10px; border-radius:5px;">الإشعارات</a></li>
-      <?php if($_SESSION['user_type']=='company'): ?>
+      <?php if(!empty($_SESSION['is_admin'])): ?>
+        <li><a href="admin_dashboard.php">لوحة المدير</a></li>
+      <?php elseif($_SESSION['user_type']=='company'): ?>
         <li><a href="employer_dashboard.php">لوحة الشركة</a></li>
       <?php else: ?>
         <li><a href="graduate_dashboard.php">لوحة الخريج</a></li>
@@ -25,7 +42,9 @@ if (session_status() == PHP_SESSION_NONE) session_start();
     <div>
       <li style="color: #2c3e50; font-weight: bold; padding: 5px 10px;">
         مرحباً، <?php echo htmlspecialchars($_SESSION['user_name']); ?>
-        <?php if($_SESSION['user_type'] == 'graduate'): ?>
+        <?php if(!empty($_SESSION['is_admin'])): ?>
+          <span style="font-size: 12px; color: #8e44ad;">(مدير)</span>
+        <?php elseif($_SESSION['user_type'] == 'graduate'): ?>
           <span style="font-size: 12px; color: #27ae60;">(خريج)</span>
         <?php elseif($_SESSION['user_type'] == 'company'): ?>
           <?php
@@ -45,8 +64,6 @@ if (session_status() == PHP_SESSION_NONE) session_start();
           <?php elseif (isset($company_data) && $company_data['is_verified']): ?>
             <span style="font-size: 10px; color: #27ae60; margin-right: 5px;">✓ موثق</span>
           <?php endif; ?>
-        <?php elseif(!empty($_SESSION['is_admin'])): ?>
-          <span style="font-size: 12px; color: #8e44ad;">(مدير)</span>
         <?php endif; ?>
       </li>
       <?php if(!empty($_SESSION['is_admin'])): ?>

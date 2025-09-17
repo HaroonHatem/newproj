@@ -7,14 +7,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $password = $_POST['password'];
   $university = trim($_POST['university']);
   $specialization = trim($_POST['specialization']);
-  $phone = trim($_POST['phone']);
+  // Normalize and validate Yemen phone: +967 + 9 digits, starting with 70/71/73/77/78
+  $raw_phone = isset($_POST['phone']) ? preg_replace('/\D+/', '', $_POST['phone']) : '';
+  if (strlen($raw_phone) === 12 && substr($raw_phone, 0, 3) === '967') {
+    $raw_phone = substr($raw_phone, 3);
+  }
+  if (!preg_match('/^(70|71|73|77|78)\d{7}$/', $raw_phone)) {
+    $error = 'رقم الهاتف اليمني يجب أن يكون 9 أرقام ويبدأ بـ 70 أو 71 أو 73 أو 77 أو 78.';
+  }
+  $phone = '+967' . $raw_phone;
   $cv_link = trim($_POST['cv_link']);
   $user_type = 'graduate';
   $cv_file = null;
   $certificate_file = null;
   
   // Handle CV file upload
-  if (!empty($_FILES['cv']['name'])) {
+  if (empty($error) && !empty($_FILES['cv']['name'])) {
     if ($_FILES['cv']['size'] > 5 * 1024 * 1024) {
       $error = 'حجم الملف أكبر من 5MB';
     } else {
@@ -24,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir('uploads')) mkdir('uploads', 0755, true);
         $fname = uniqid('cv_') . '.' . $ext;
         $target = 'uploads/' . $fname;
-        if (move_uploaded_file($_FILES['cv']['tmp_name'], $target)) $cv_file = $target;
+        if (move_uploaded_file($_FILES['cv']['tmp_name'], $target)) $cv_file = $target; else $error = 'تعذر رفع ملف السيرة';
       } else $error = 'نوع الملف غير مدعوم';
     }
   }
@@ -40,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!is_dir('uploads/certificates')) mkdir('uploads/certificates', 0755, true);
         $fname = uniqid('cert_') . '.' . $ext;
         $target = 'uploads/certificates/' . $fname;
-        if (move_uploaded_file($_FILES['certificate']['tmp_name'], $target)) $certificate_file = $target;
+        if (move_uploaded_file($_FILES['certificate']['tmp_name'], $target)) $certificate_file = $target; else $error = 'تعذر رفع شهادة التخرج';
       } else $error = 'نوع ملف الشهادة غير مدعوم (pdf, jpg, png فقط)';
     }
   } else if (empty($error)) {
@@ -107,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card form-card">
       <h2>تسجيل خريج</h2>
       <?php if (!empty($error)) echo '<p class="error">' . htmlspecialchars($error) . '</p>'; ?>
+      <div style="margin-bottom:10px;">
+        <button class="btn" type="button" onclick="if(document.referrer){history.back();}else{window.location.href='index.php';}">عودة</button>
+      </div>
       <form method="post" enctype="multipart/form-data">
         <div class="form-grid">
           <input class="input" name="name" placeholder="الاسم الكامل" required>
@@ -114,7 +125,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <div class="form-grid">
           <input class="input" name="password" type="password" placeholder="كلمة المرور" required>
-          <input class="input" name="phone" placeholder="الهاتف">
+          <div>
+            <label style="display:block; font-size:12px; color:#555; margin-bottom:4px;">الهاتف (اليمن)</label>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="display:flex; align-items:center; gap:6px; background:#f6f6f6; border:1px solid #ddd; padding:8px 10px; border-radius:6px;">
+                <span>🇾🇪</span>
+                <span style="direction:ltr;">+967</span>
+              </span>
+              <input class="input" name="phone" placeholder="xxxxxxxxx" inputmode="numeric" pattern="(70|71|73|77|78)[0-9]{7}" title="9 أرقام تبدأ بـ 70 أو 71 أو 73 أو 77 أو 78" maxlength="9" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9);">
+            </div>
+          </div>
         </div>
         <div class="form-grid"><input class="input" name="university" placeholder="الجامعة">
         <input class="input" name="specialization" placeholder="التخصص">

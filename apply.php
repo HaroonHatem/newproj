@@ -6,6 +6,18 @@ session_start();
      exit();
  }
  $user_id=$_SESSION['user_id'];
+
+ // Block unverified graduates from applying
+ $verifyStmt = $conn->prepare('SELECT is_verified, verification_status FROM users WHERE id = ? LIMIT 1');
+ $verifyStmt->bind_param('i', $user_id);
+ $verifyStmt->execute();
+ $verify = $verifyStmt->get_result()->fetch_assoc();
+ if (!$verify || !$verify['is_verified'] || $verify['verification_status'] !== 'approved') {
+     $_SESSION['message'] = 'لا يمكنك التقديم حتى يتم التحقق من هويتك والموافقة عليها.';
+     header('Location: graduate_dashboard.php');
+     exit();
+ }
+
  $job_id=isset($_GET['job_id'])?intval($_GET['job_id']):0;
  if(!$job_id){ header('Location: search_jobs.php');
   exit();

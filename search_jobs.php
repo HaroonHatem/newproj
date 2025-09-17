@@ -2,8 +2,22 @@
 session_start();
 include 'db.php';
 $keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
+
+// Helper: get current graduate verification
+function get_current_graduate_verification($conn){
+    if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'graduate') return [false, ''];
+    $uid = $_SESSION['user_id'];
+    $s = $conn->prepare('SELECT is_verified, verification_status FROM users WHERE id=? LIMIT 1');
+    $s->bind_param('i', $uid);
+    $s->execute();
+    $d = $s->get_result()->fetch_assoc();
+    if (!$d) return [false, ''];
+    return [ (int)$d['is_verified'] === 1 && $d['verification_status'] === 'approved', $d['verification_status'] ];
+}
+
 if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
   $k = '%' . $keyword . '%';
+  list($can_apply, $vstatus) = get_current_graduate_verification($conn);
   
   // Check if user is logged in as graduate
   if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate') {
@@ -27,15 +41,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
   while ($r = $res->fetch_assoc()) {
     $item = ['id' => $r['id'], 'title' => $r['title'], 'company' => $r['company_name'], 'location' => $r['location'], 'description' => $r['description']];
     if (isset($r['has_applied'])) {
-      $item['has_applied'] = $r['has_applied'];
+      $item['has_applied'] = (int)$r['has_applied'];
     }
+    // expose whether this user is allowed to apply
+    $item['can_apply'] = $can_apply ? 1 : 0;
     $items[] = $item;
   }
   header('Content-Type: application/json; charset=utf-8');
   echo json_encode($items);
   exit();
 }
+
 // Get jobs with application status for logged-in graduates
+list($can_apply_page, $vstatus_page) = get_current_graduate_verification($conn);
 if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate') {
     $user_id = $_SESSION['user_id'];
     $sql = "SELECT jobs.*, users.name AS company_name, 
@@ -54,7 +72,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate') {
 }
 ?>
 <!DOCTYPE html>
-<html lang='ar' dir='rtl'>
+<html lang='ار' dir='rtl'>
 
 <head>
   <meta charset='utf-8'>
@@ -67,6 +85,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate') {
   <main class='container'>
     <div class='card'>
       <h2>بحث عن وظائف</h2>
+      <?php if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate' && !$can_apply_page): ?>
+        <div class="card" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;margin-bottom:15px;">
+          <p>لا يمكنك التقديم على الوظائف حتى يتم التحقق من هويتك والموافقة عليها.</p>
+        </div>
+      <?php endif; ?>
       <div class='search-form'><input id='job-search' class='input' placeholder='ابحث عن عنوان أو شركة أو موقع'>
       <button id='clear-search' class='btn'>مسح</button></div>
       <div id='jobs-list'><?php if ($result && $result->num_rows > 0): while ($row = $result->fetch_assoc()): ?><div class='job-card card'>
@@ -80,7 +103,11 @@ if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate') {
                   <p style="color: #666; font-size: 14px; margin: 5px 0;">لقد قدمت لهذه الوظيفة من قبل</p>
                 </div>
               <?php else: ?>
-                <a class='btn btn-apply' href='apply.php?job_id=<?php echo $row['id']; ?>'>قدم الآن</a>
+                <?php if ($can_apply_page): ?>
+                  <a class='btn btn-apply' href='apply.php?job_id=<?php echo $row['id']; ?>'>قدم الآن</a>
+                <?php else: ?>
+                  <button class='btn' disabled title='بانتظار التحقق'>بانتظار التحقق</button>
+                <?php endif; ?>
               <?php endif; ?>
               <?php else: ?><a class='btn' href='login.php'>دخول للتقديم</a><?php endif; ?>
             </div><?php endwhile;
@@ -90,6 +117,7 @@ if (isset($_SESSION['user_id']) && $_SESSION['user_type'] === 'graduate') {
   <script>
     window.USER_TYPE = '<?php echo isset($_SESSION['user_type']) ? $_SESSION['user_type'] : 'guest'; ?>';
     window.IS_LOGGED_IN = <?php echo isset($_SESSION['user_id']) ? 'true' : 'false'; ?>;
+    window.CAN_APPLY = <?php echo (isset($_SESSION['user_id']) && $_SESSION['user_type']==='graduate' && $can_apply_page) ? 'true' : 'false'; ?>;
   </script>
   <script src='assets/js/script.js'></script>
 </body>

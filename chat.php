@@ -10,12 +10,37 @@ if (!isset($_SESSION['user_id'])) {
 
 $user_id = $_SESSION['user_id'];
 $user_type = $_SESSION['user_type'];
+$is_admin = !empty($_SESSION['is_admin']);
 $conversation_id = isset($_GET['conversation_id']) ? (int)$_GET['conversation_id'] : 0;
 
 // Handle sending messages
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
     $message = trim($_POST['message']);
     if (!empty($message) && $conversation_id > 0) {
+        // Check that this conversation does not involve admin for non-admin users
+        if (!$is_admin) {
+            $chk = $conn->prepare('SELECT company_id, graduate_id FROM chat_conversations WHERE id = ?');
+            $chk->bind_param('i', $conversation_id);
+            $chk->execute();
+            $c = $chk->get_result()->fetch_assoc();
+            if ($c) {
+                $aidStmt = $conn->prepare("SELECT email FROM users WHERE id IN (?,?)");
+                $aidStmt->bind_param('ii', $c['company_id'], $c['graduate_id']);
+                $aidStmt->execute();
+                $emailsRes = $aidStmt->get_result();
+                $blocked = false;
+                while ($row = $emailsRes->fetch_assoc()) {
+                    $em = strtolower($row['email']);
+                    if (in_array($em, ['haroonhatem34@gmail.com','hamzahmisr@gmail.com'])) { $blocked = true; break; }
+                }
+                if ($blocked) {
+                    $_SESSION['chat_error'] = 'لا يمكن مراسلة الإدارة مباشرة.';
+                    header('Location: chat.php');
+                    exit();
+                }
+            }
+        }
+        
         // Debug: Log the message length and content
         error_log("Chat message length: " . strlen($message) . ", content: " . substr($message, 0, 100));
         
@@ -55,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
     }
 }
 
-// Get conversations list
+// Get conversations list (exclude admins for non-admin users)
 if ($user_type === 'company') {
     $stmt = $conn->prepare('
         SELECT cc.*, j.title as job_title, u.name as graduate_name, u.university, u.specialization,
@@ -82,6 +107,21 @@ if ($user_type === 'company') {
 $stmt->execute();
 $conversations = $stmt->get_result();
 
+// Filter out conversations involving admin emails for non-admin users
+if (!$is_admin) {
+    $filtered = [];
+    while ($row = $conversations->fetch_assoc()) {
+        $cid = $row['company_id'];
+        $gid = $row['graduate_id'];
+        $emails = $conn->query("SELECT email FROM users WHERE id IN (".(int)$cid.",".(int)$gid.")");
+        $hasAdmin = false;
+        while ($e = $emails->fetch_assoc()) { if (in_array(strtolower($e['email']), ['haroonhatem34@gmail.com','hamzahmisr@gmail.com'])) { $hasAdmin = true; break; } }
+        if (!$hasAdmin) { $filtered[] = $row; }
+    }
+    // Build an ArrayIterator-like replacement
+    $conversations = new ArrayObject($filtered);
+}
+
 // Get current conversation details
 $current_conversation = null;
 $messages = [];
@@ -93,6 +133,21 @@ if ($conversation_id > 0) {
     $current_conversation = $stmt->get_result()->fetch_assoc();
     
     if ($current_conversation) {
+        // Prevent non-admin from viewing admin conversations
+        if (!$is_admin) {
+            $aidStmt = $conn->prepare('SELECT email FROM users WHERE id IN (?,?)');
+            $aidStmt->bind_param('ii', $current_conversation['company_id'], $current_conversation['graduate_id']);
+            $aidStmt->execute();
+            $emailsRes = $aidStmt->get_result();
+            while ($row = $emailsRes->fetch_assoc()) {
+                $em = strtolower($row['email']);
+                if (in_array($em, ['haroonhatem34@gmail.com','hamzahmisr@gmail.com'])) {
+                    $_SESSION['chat_error'] = 'لا يمكن مراسلة الإدارة مباشرة.';
+                    header('Location: chat.php');
+                    exit();
+                }
+            }
+        }
         // Get messages
         $stmt2 = $conn->prepare('
             SELECT cm.*, u.name as sender_name, u.user_type 
@@ -315,28 +370,52 @@ if ($conversation_id > 0) {
             <?php endif; ?>
             <div class="chat-container">
                 <div class="conversations-list">
-                    <?php if ($conversations->num_rows > 0): ?>
-                        <?php while ($conv = $conversations->fetch_assoc()): ?>
-                            <div class="conversation-item <?php echo ($conversation_id == $conv['id']) ? 'active' : ''; ?>" 
-                                 onclick="location.href='chat.php?conversation_id=<?php echo $conv['id']; ?>'">
-                                <div class="conversation-title">
-                                    <?php if ($conv['unread_count'] > 0): ?>
-                                        <span class="unread-badge"><?php echo $conv['unread_count']; ?></span>
-                                    <?php endif; ?>
-                                    <?php echo htmlspecialchars($conv['job_title']); ?>
-                                </div>
-                                <div class="conversation-meta">
-                                    <?php if ($user_type === 'company'): ?>
-                                        <?php echo htmlspecialchars($conv['graduate_name']); ?>
-                                        <?php if ($conv['university']): ?>
-                                            - <?php echo htmlspecialchars($conv['university']); ?>
+                    <?php if (($is_admin && isset($conversations) && $conversations instanceof mysqli_result && $conversations->num_rows > 0) || (!$is_admin && isset($conversations) && $conversations instanceof ArrayObject && $conversations->count() > 0)): ?>
+                        <?php if ($is_admin): ?>
+                            <?php while ($conv = $conversations->fetch_assoc()): ?>
+                                <div class="conversation-item <?php echo ($conversation_id == $conv['id']) ? 'active' : ''; ?>" 
+                                     onclick="location.href='chat.php?conversation_id=<?php echo $conv['id']; ?>'">
+                                    <div class="conversation-title">
+                                        <?php if ($conv['unread_count'] > 0): ?>
+                                            <span class="unread-badge"><?php echo $conv['unread_count']; ?></span>
                                         <?php endif; ?>
-                                    <?php else: ?>
-                                        <?php echo htmlspecialchars($conv['company_name']); ?>
-                                    <?php endif; ?>
+                                        <?php echo htmlspecialchars($conv['job_title']); ?>
+                                    </div>
+                                    <div class="conversation-meta">
+                                        <?php if ($user_type === 'company'): ?>
+                                            <?php echo htmlspecialchars($conv['graduate_name']); ?>
+                                            <?php if ($conv['university']): ?>
+                                                - <?php echo htmlspecialchars($conv['university']); ?>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <?php echo htmlspecialchars($conv['company_name']); ?>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
-                            </div>
-                        <?php endwhile; ?>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <?php foreach ($conversations as $conv): ?>
+                                <div class="conversation-item <?php echo ($conversation_id == $conv['id']) ? 'active' : ''; ?>" 
+                                     onclick="location.href='chat.php?conversation_id=<?php echo $conv['id']; ?>'">
+                                    <div class="conversation-title">
+                                        <?php if ($conv['unread_count'] > 0): ?>
+                                            <span class="unread-badge"><?php echo $conv['unread_count']; ?></span>
+                                        <?php endif; ?>
+                                        <?php echo htmlspecialchars($conv['job_title']); ?>
+                                    </div>
+                                    <div class="conversation-meta">
+                                        <?php if ($user_type === 'company'): ?>
+                                            <?php echo htmlspecialchars($conv['graduate_name']); ?>
+                                            <?php if ($conv['university']): ?>
+                                                - <?php echo htmlspecialchars($conv['university']); ?>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <?php echo htmlspecialchars($conv['company_name']); ?>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     <?php else: ?>
                         <div style="padding: 20px; text-align: center; color: #666;">
                             لا توجد محادثات

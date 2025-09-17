@@ -104,5 +104,61 @@ $conn->query("CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// Admin-only chat tables
+$conn->query("CREATE TABLE IF NOT EXISTS admin_conversations (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  created_by INT NOT NULL,
+  other_admin_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (other_admin_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY unique_admin_pair (created_by, other_admin_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+$conn->query("CREATE TABLE IF NOT EXISTS admin_messages (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  conversation_id INT NOT NULL,
+  sender_id INT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (conversation_id) REFERENCES admin_conversations(id) ON DELETE CASCADE,
+  FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// Account removals log
+$conn->query("CREATE TABLE IF NOT EXISTS account_removals (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  removed_user_email VARCHAR(150) NOT NULL,
+  removed_user_name VARCHAR(150) DEFAULT NULL,
+  removed_user_type ENUM('graduate','company') DEFAULT NULL,
+  reason TEXT DEFAULT NULL,
+  removed_by INT DEFAULT NULL,
+  removed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (removed_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+// Session guard: if a user was deleted, log them out immediately
+if (session_status() === PHP_SESSION_ACTIVE && isset($_SESSION['user_id'])) {
+    $uid = (int)$_SESSION['user_id'];
+    $check = $conn->prepare('SELECT id FROM users WHERE id=? LIMIT 1');
+    $check->bind_param('i', $uid);
+    if ($check->execute()) {
+        $res = $check->get_result();
+        if ($res->num_rows === 0) {
+            // Destroy session and redirect to login with notice
+            $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], $params['secure'], $params['httponly']);
+            }
+            session_destroy();
+            header('Location: login.php?removed=1');
+            exit();
+        }
+    }
+}
 ?>
 

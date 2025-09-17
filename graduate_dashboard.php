@@ -3,8 +3,16 @@ session_start();
 include 'db.php';
 
 // Check if user is logged in and is a graduate
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'graduate') {
+if (!isset($_SESSION['user_id'])) {
     header('Location: login.php');
+    exit();
+}
+if (!empty($_SESSION['is_admin'])) {
+    header('Location: admin_dashboard.php');
+    exit();
+}
+if ($_SESSION['user_type'] !== 'graduate') {
+    header('Location: index.php');
     exit();
 }
 
@@ -66,8 +74,13 @@ $res = $conn->query("SELECT id, name, university, specialization, phone, cv_file
 <main class="container">
   <!-- Welcome Message -->
   <div class="card welcome-message">
-    <h1>مرحباً <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
-    <p>مرحباً بك في لوحة الخريج. يمكنك هنا إدارة طلبات التوظيف والبحث عن الوظائف المناسبة لك.</p>
+    <?php if (!empty($_SESSION['is_admin'])): ?>
+      <h1>مرحباً، مدير!</h1>
+      <p>تم تسجيل دخولك كمسؤول. يمكنك إدارة المستخدمين وطلبات التحقق من القائمة.</p>
+    <?php else: ?>
+      <h1>مرحباً <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
+      <p>مرحباً بك في لوحة الخريج. يمكنك هنا إدارة طلبات التوظيف والبحث عن الوظائف المناسبة لك.</p>
+    <?php endif; ?>
   </div>
   
   <?php if (isset($_SESSION['message'])): ?>
