@@ -16,11 +16,16 @@ document.addEventListener('DOMContentLoaded', function(){
             div.innerHTML = '<h3>'+escapeHtml(it.title)+'</h3><div class="meta">'+escapeHtml(it.company)+' • '+escapeHtml(it.location)+'</div><p>'+escapeHtml(it.description)+'</p>';
             var utype = (typeof window !== 'undefined' && window.USER_TYPE) ? window.USER_TYPE : 'guest';
             var isLogged = (typeof window !== 'undefined' && window.IS_LOGGED_IN) ? window.IS_LOGGED_IN : false;
+            var canApply = (typeof window !== 'undefined' && window.CAN_APPLY) ? window.CAN_APPLY : false;
             if (utype === 'graduate') {
               if (it.has_applied) {
                 div.innerHTML += '<div class="application-status"><span class="status-badge applied">✓ تم التقديم</span><p style="color: #666; font-size: 14px; margin: 5px 0;">لقد قدمت لهذه الوظيفة من قبل</p></div>';
               } else {
-                div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+                if (canApply) {
+                  div.innerHTML += '<a class="btn btn-apply" href="apply.php?job_id='+it.id+'">قدم الآن</a>';
+                } else {
+                  div.innerHTML += '<button class="btn" disabled title="بانتظار التحقق">بانتظار التحقق</button>';
+                }
               }
             } else if (!isLogged) {
               div.innerHTML += '<a class="btn" href="login.php">دخول للتقديم</a>';
@@ -67,4 +72,4 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-function escapeHtml(text){ var map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;" }; return String(text).replace(/[&<>"']/g, function(m){ return map[m]; }); }
+function escapeHtml(text){ var map = { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#039;' }; return String(text).replace(/[&<>"']/g, function(m){ return map[m]; }); }

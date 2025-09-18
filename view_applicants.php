@@ -47,7 +47,9 @@ $apps = $stmt2->get_result(); ?>
                         <th>الهاتف</th>
                         <th>السيرة</th>
                         <th>التاريخ</th>
+                        <th>الحالة</th>
                         <th>المحادثة</th>
+                        <th>إجراء</th>
                     </tr><?php while ($a = $apps->fetch_assoc()): ?><tr>
                             <td><?php echo htmlspecialchars($a['name']); ?></td>
                             <td><?php echo htmlspecialchars($a['email']); ?></td>
@@ -56,6 +58,13 @@ $apps = $stmt2->get_result(); ?>
                                             elseif (!empty($a['cv_file'])) echo "<a href='" . htmlspecialchars($a['cv_file']) . "' target='_blank'>ملف</a>";
                                             else echo '-'; ?></td>
                             <td><?php echo $a['applied_at']; ?></td>
+                            <td><span class="status-badge status-<?php echo $a['status']; ?>"><?php 
+                                switch($a['status']) {
+                                  case 'pending': echo 'معلق'; break;
+                                  case 'accepted': echo 'مقبول'; break;
+                                  case 'rejected': echo 'مرفوض'; break;
+                                }
+                                ?></span></td>
                             <td>
                                 <?php if ($a['conversation_id']): ?>
                                     <a href="chat.php?conversation_id=<?php echo $a['conversation_id']; ?>" class="btn btn-apply">
@@ -68,6 +77,18 @@ $apps = $stmt2->get_result(); ?>
                                     </a>
                                 <?php else: ?>
                                     <span style="color: #666;">لم تبدأ بعد</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <?php if ($a['status'] === 'pending'): ?>
+                                    <form method="post" action="update_application_status.php" style="display:flex; gap:8px;">
+                                        <input type="hidden" name="application_id" value="<?php echo (int)$a['id']; ?>">
+                                        <input type="hidden" name="job_id" value="<?php echo (int)$job_id; ?>">
+                                        <button class="btn btn-apply" name="action" value="accept" type="submit">قبول</button>
+                                        <button class="btn btn-danger" name="action" value="reject" type="submit">رفض</button>
+                                    </form>
+                                <?php else: ?>
+                                    <span style="color:#666;">—</span>
                                 <?php endif; ?>
                             </td>
                         </tr><?php endwhile; ?>
