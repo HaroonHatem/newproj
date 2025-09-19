@@ -8,6 +8,30 @@ if ($conn->connect_error) {
     die('فشل الاتصال بقاعدة البيانات: ' . $conn->connect_error);
 }
 $conn->set_charset('utf8mb4');
+
+// Ensure legacy tables are upgraded to InnoDB before adding new foreign keys
+if (!function_exists('ensureInnoDbEngine')) {
+    function ensureInnoDbEngine($conn, $schema, $table) {
+        $stmt = $conn->prepare("SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?");
+        if ($stmt) {
+            $stmt->bind_param('ss', $schema, $table);
+            if ($stmt->execute()) {
+                $res = $stmt->get_result();
+                if ($res && ($row = $res->fetch_assoc())) {
+                    if (isset($row['ENGINE']) && strtolower($row['ENGINE']) !== 'innodb') {
+                        $safeTable = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+                        if ($safeTable !== '') {
+                            $sql = sprintf('ALTER TABLE `%s` ENGINE=InnoDB', $safeTable);
+                            $conn->query($sql);
+                        }
+                    }
+                }
+            }
+            $stmt->close();
+        }
+    }
+}
+
 // Ensure required tables exist (safety in case schema.sql wasn't executed)
 $conn->query("CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -24,6 +48,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+ensureInnoDbEngine($conn, $dbname, 'users');
 $conn->query("CREATE TABLE IF NOT EXISTS jobs (
   id INT AUTO_INCREMENT PRIMARY KEY,
   company_id INT NOT NULL,
@@ -34,6 +59,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS jobs (
   FOREIGN KEY (company_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+ensureInnoDbEngine($conn, $dbname, 'jobs');
 $conn->query("CREATE TABLE IF NOT EXISTS applications (
   id INT AUTO_INCREMENT PRIMARY KEY,
   job_id INT NOT NULL,
@@ -44,6 +70,7 @@ $conn->query("CREATE TABLE IF NOT EXISTS applications (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
+ensureInnoDbEngine($conn, $dbname, 'applications');
 // Add verification status to users table (with error handling)
 // Check if columns exist before adding them
 $result = $conn->query("SHOW COLUMNS FROM users LIKE 'is_verified'");
