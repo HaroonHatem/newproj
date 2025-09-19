@@ -54,9 +54,15 @@ $apps = $stmt2->get_result(); ?>
                             <td><?php echo htmlspecialchars($a['name']); ?></td>
                             <td><?php echo htmlspecialchars($a['email']); ?></td>
                             <td><?php echo htmlspecialchars($a['phone']); ?></td>
-                            <td><?php if (!empty($a['cv_link'])) echo "<a href='" . htmlspecialchars($a['cv_link']) . "' target='_blank'>رابط</a>";
-                                            elseif (!empty($a['cv_file'])) echo "<a href='" . htmlspecialchars($a['cv_file']) . "' target='_blank'>ملف</a>";
-                                            else echo '-'; ?></td>
+                            <td><?php 
+                                if (!empty($a['cv_file'])) {
+                                    echo "<a href='view_cv.php?user_id=" . (int)$a['user_id'] . "' target='_blank'>ملف</a>";
+                                } else if (!empty($a['cv_link'])) {
+                                    echo '-'; // third-party links are not exposed for privacy
+                                } else {
+                                    echo '-';
+                                }
+                            ?></td>
                             <td><?php echo $a['applied_at']; ?></td>
                             <td><span class="status-badge status-<?php echo $a['status']; ?>"><?php 
                                 switch($a['status']) {

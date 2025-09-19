@@ -56,6 +56,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   
   if (empty($error)) {
+    // Block re-registration for emails previously removed by admin
+    $rm = $conn->prepare('SELECT id FROM account_removals WHERE LOWER(removed_user_email)=LOWER(?) ORDER BY removed_at DESC LIMIT 1');
+    $rm->bind_param('s', $email);
+    $rm->execute();
+    $rmr = $rm->get_result();
+    if ($rmr && $rmr->num_rows > 0) {
+      $error = 'لا يمكن استخدام هذا البريد لإعادة التسجيل. تم إزالة هذا الحساب من قبل الإدارة.';
+    }
+  }
+
+  if (empty($error)) {
     $stmt = $conn->prepare('SELECT id FROM users WHERE email=? LIMIT 1');
     $stmt->bind_param('s', $email);
     $stmt->execute();
@@ -118,13 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div style="margin-bottom:10px;">
         <button class="btn" type="button" onclick="if(document.referrer){history.back();}else{window.location.href='index.php';}">عودة</button>
       </div>
-      <form method="post" enctype="multipart/form-data">
+      <form method="post" enctype="multipart/form-data" autocomplete="off">
         <div class="form-grid">
-          <input class="input" name="name" placeholder="الاسم الكامل" required>
-          <input class="input" name="email" type="email" placeholder="البريد الإلكتروني" required>
+          <input class="input" name="name" placeholder="الاسم الكامل" required autocomplete="off" value="<?php echo isset($name) && !empty($error) ? htmlspecialchars($name) : ''; ?>">
+          <input class="input" name="email" type="email" placeholder="البريد الإلكتروني" required autocomplete="off" value="<?php echo isset($email) && !empty($error) ? htmlspecialchars($email) : ''; ?>">
         </div>
         <div class="form-grid">
-          <input class="input" name="password" type="password" placeholder="كلمة المرور" required>
+          <input class="input" name="password" type="password" placeholder="كلمة المرور" required autocomplete="new-password">
           <div>
             <label style="display:block; font-size:12px; color:#555; margin-bottom:4px;">الهاتف (اليمن)</label>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -132,22 +143,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>🇾🇪</span>
                 <span style="direction:ltr;">+967</span>
               </span>
-              <input class="input" name="phone" placeholder="xxxxxxxxx" inputmode="numeric" pattern="(70|71|73|77|78)[0-9]{7}" title="9 أرقام تبدأ بـ 70 أو 71 أو 73 أو 77 أو 78" maxlength="9" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9);">
+              <input class="input" name="phone" placeholder="xxxxxxxxx" inputmode="numeric" pattern="(70|71|73|77|78)[0-9]{7}" title="9 أرقام تبدأ بـ 70 أو 71 أو 73 أو 77 أو 78" maxlength="9" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9);" autocomplete="off" value="<?php echo isset($raw_phone) && !empty($error) ? htmlspecialchars($raw_phone) : ''; ?>">
             </div>
           </div>
         </div>
-        <div class="form-grid"><input class="input" name="university" placeholder="الجامعة">
-        <input class="input" name="specialization" placeholder="التخصص">
+        <div class="form-grid"><input class="input" name="university" placeholder="الجامعة" autocomplete="off" value="<?php echo isset($university) && !empty($error) ? htmlspecialchars($university) : ''; ?>">
+        <input class="input" name="specialization" placeholder="التخصص" autocomplete="off" value="<?php echo isset($specialization) && !empty($error) ? htmlspecialchars($specialization) : ''; ?>">
       </div>
       <label>رابط السيرة (اختياري)</label>
-      <input class="input" name="cv_link" placeholder="رابط السيرة (Google Drive أو رابط مباشر)">
+      <input class="input" name="cv_link" placeholder="رابط السيرة (Google Drive أو رابط مباشر)" autocomplete="off" value="<?php echo isset($cv_link) && !empty($error) ? htmlspecialchars($cv_link) : ''; ?>">
       <label>أو رفع السيرة (pdf/doc/docx) حتى 5MB</label>
-      <input type="file" name="cv" accept=".pdf,.doc,.docx">
+      <input type="file" name="cv" accept=".pdf,.doc,.docx" autocomplete="off">
       
       <h3>التحقق من الهوية</h3>
       <p class="info-text">لضمان صحة البيانات، يرجى رفع شهادة التخرج للتحقق من الهوية</p>
       <label>شهادة التخرج (مطلوب) - pdf, jpg, png حتى 10MB</label>
-      <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png" required>
+      <input type="file" name="certificate" accept=".pdf,.jpg,.jpeg,.png" required autocomplete="off">
       
       <button class="btn btn-primary" type="submit">إنشاء الحساب</button>
       </form>

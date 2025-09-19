@@ -61,8 +61,7 @@ document.addEventListener('DOMContentLoaded', function(){
             }
             
             div.innerHTML = '<div class="grad-header"><h3>'+escapeHtml(it.name)+'</h3>'+verificationBadge+'</div><div class="meta">'+escapeHtml(it.university)+' • '+escapeHtml(it.specialization)+'</div><p>الهاتف: '+escapeHtml(it.phone)+'</p>';
-            if(it.cv_link) div.innerHTML += '<a class="btn btn-apply" href="'+escapeHtml(it.cv_link)+'" target="_blank">عرض السيرة (رابط)</a>';
-            else if(it.cv_file) div.innerHTML += '<a class="btn btn-apply" href="'+escapeHtml(it.cv_file)+'" target="_blank">عرض السيرة (ملف)</a>';
+            // Privacy: do not render CV links for graduates list on client
             list.appendChild(div);
           });
         }

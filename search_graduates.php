@@ -56,9 +56,7 @@ $res = $conn->query("SELECT id, name, university, specialization, phone, cv_file
             </div>
             <div class="meta"><?php echo htmlspecialchars($r['university']) . ' • ' . htmlspecialchars($r['specialization']); ?></div>
             <p>الهاتف: <?php echo htmlspecialchars($r['phone'] ?? ''); ?></p>
-            <?php if (!empty($r['cv_file'])): ?>
-              <a class="btn btn-apply" href="<?php echo htmlspecialchars($r['cv_file']); ?>" target="_blank">عرض السيرة (ملف)</a>
-            <?php endif; ?>
+            <?php /* Privacy: hide CV link from public graduates search */ ?>
           </div>
         <?php endwhile; ?>
       <?php else: ?>

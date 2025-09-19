@@ -57,11 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div style="margin-bottom:10px;">
         <button class="btn" type="button" onclick="if(document.referrer){history.back();}else{window.location.href='index.php';}">عودة</button>
       </div>
-      <form method="post">
+      <form method="post" autocomplete="off">
         <label>البريد الإلكتروني</label>
-        <input class="input" type="email" name="email" required>
+        <input class="input" type="email" name="email" required autocomplete="off" value="<?php echo isset($email) && !empty($error) ? htmlspecialchars($email) : ''; ?>">
         <label>كلمة المرور</label>
-        <input class="input" type="password" name="password" required>
+        <input class="input" type="password" name="password" required autocomplete="new-password">
         <button class="btn btn-primary" type="submit">دخول</button></form>
     </div>
   </main>

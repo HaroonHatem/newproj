@@ -30,6 +30,28 @@ if (session_status() == PHP_SESSION_NONE) session_start();
       <?php if(empty($_SESSION['is_admin']) && $_SESSION['user_type'] != 'graduate'): ?>
       <li><a href="search_graduates.php">بحث عن خريجين</a></li>
       <?php endif; ?>
+      <?php
+        // Unread notifications count for current user
+        $notif_count = 0;
+        if (isset($_SESSION['user_id'])) {
+          include_once 'db.php';
+          $nst = $conn->prepare('SELECT COUNT(*) as c FROM notifications WHERE user_id = ? AND is_read = 0');
+          $nst->bind_param('i', $_SESSION['user_id']);
+          $nst->execute();
+          $nr = $nst->get_result();
+          if ($nr) { $notif_count = (int)$nr->fetch_assoc()['c']; }
+        }
+      ?>
+      <li>
+        <a href="notifications.php" style="background-color:#007bff; color:white; padding:5px 10px; border-radius:5px; display:inline-flex; align-items:center; gap:6px;">
+          الإشعارات
+          <?php if ($notif_count > 0): ?>
+            <span style="background:#dc3545; color:#fff; border-radius:50%; padding:2px 6px; font-size:12px; line-height:1; display:inline-block; min-width:18px; text-align:center;">
+              <?php echo $notif_count; ?>
+            </span>
+          <?php endif; ?>
+        </a>
+      </li>
       <li><a href="chat.php" style="background-color:#28a745; color:white; padding:5px 10px; border-radius:5px;">المحادثات</a></li>
       <?php if(!empty($_SESSION['is_admin'])): ?>
         <li><a href="admin_dashboard.php">لوحة المدير</a></li>

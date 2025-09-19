@@ -38,6 +38,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
   
   if (empty($error)) {
+    // Block re-registration for emails previously removed by admin
+    $rm = $conn->prepare('SELECT id FROM account_removals WHERE LOWER(removed_user_email)=LOWER(?) ORDER BY removed_at DESC LIMIT 1');
+    $rm->bind_param('s', $email);
+    $rm->execute();
+    $rmr = $rm->get_result();
+    if ($rmr && $rmr->num_rows > 0) {
+      $error = 'لا يمكن استخدام هذا البريد لإعادة التسجيل. تم إزالة هذا الحساب من قبل الإدارة.';
+    }
+  }
+
+  if (empty($error)) {
     $stmt = $conn->prepare('SELECT id FROM users WHERE email=? LIMIT 1');
     $stmt->bind_param('s', $email);
     $stmt->execute();
@@ -99,9 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div style="margin-bottom:10px;">
         <button class="btn" type="button" onclick="if(document.referrer){history.back();}else{window.location.href='index.php';}">عودة</button>
       </div>
-      <form method="post" enctype="multipart/form-data">
-        <div class="form-grid"><input class="input" name="name" placeholder="اسم الشركة" required><input class="input" name="email" type="email" placeholder="البريد الإلكتروني" required></div>
-        <div class="form-grid"><input class="input" name="password" type="password" placeholder="كلمة المرور" required>
+      <form method="post" enctype="multipart/form-data" autocomplete="off">
+        <div class="form-grid"><input class="input" name="name" placeholder="اسم الشركة" required autocomplete="off" value="<?php echo isset($name) && !empty($error) ? htmlspecialchars($name) : ''; ?>"><input class="input" name="email" type="email" placeholder="البريد الإلكتروني" required autocomplete="off" value="<?php echo isset($email) && !empty($error) ? htmlspecialchars($email) : ''; ?>"></div>
+        <div class="form-grid"><input class="input" name="password" type="password" placeholder="كلمة المرور" required autocomplete="new-password">
           <div>
             <label style="display:block; font-size:12px; color:#555; margin-bottom:4px;">الهاتف (اليمن)</label>
             <div style="display:flex; align-items:center; gap:8px;">
@@ -109,17 +120,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>🇾🇪</span>
                 <span style="direction:ltr;">+967</span>
               </span>
-              <input class="input" name="phone" placeholder="xxxxxxxxx" inputmode="numeric" pattern="(70|71|73|77|78)[0-9]{7}" title="9 أرقام تبدأ بـ 70 أو 71 أو 73 أو 77 أو 78" maxlength="9" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9);">
+              <input class="input" name="phone" placeholder="xxxxxxxxx" inputmode="numeric" pattern="(70|71|73|77|78)[0-9]{7}" title="9 أرقام تبدأ بـ 70 أو 71 أو 73 أو 77 أو 78" maxlength="9" required oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,9);" autocomplete="off" value="<?php echo isset($raw_phone) && !empty($error) ? htmlspecialchars($raw_phone) : ''; ?>">
             </div>
           </div>
         </div>
-        <div class="form-grid"><input class="input" name="company_location" placeholder="موقع الشركة (البلد)" required><input class="input" name="website" placeholder="الموقع الإلكتروني (اختياري)"></div>
+        <div class="form-grid"><input class="input" name="company_location" placeholder="موقع الشركة (البلد)" required autocomplete="off" value="<?php echo isset($company_location) && !empty($error) ? htmlspecialchars($company_location) : ''; ?>"><input class="input" name="website" placeholder="الموقع الإلكتروني (اختياري)" autocomplete="off" value="<?php echo isset($website) && !empty($error) ? htmlspecialchars($website) : ''; ?>"></div>
         
         <h3>التحقق من الهوية</h3>
         <p class="info-text">لضمان صحة البيانات، يرجى رفع السجل التجاري للتحقق من الهوية</p>
         
         <label>السجل التجاري (مطلوب) - pdf, jpg, png حتى 10MB</label>
-        <input type="file" name="commercial_register" accept=".pdf,.jpg,.jpeg,.png" required>
+        <input type="file" name="commercial_register" accept=".pdf,.jpg,.jpeg,.png" required autocomplete="off">
         
         <button class="btn btn-primary" type="submit">إنشاء حساب شركة</button>
       </form>
