@@ -405,7 +405,7 @@ if ($conversation_id > 0) {
                                     </div>
                                     <div class="conversation-meta">
                                         <?php if ($user_type === 'company'): ?>
-                                            <?php echo htmlspecialchars($conv['']); ?>
+                                            <?php echo htmlspecialchars($conv['graduate_name']); ?>
                                             <?php if ($conv['university']): ?>
                                                 - <?php echo htmlspecialchars($conv['university']); ?>
                                             <?php endif; ?>
@@ -545,3 +545,5 @@ if ($conversation_id > 0) {
     </script>
 </body>
 </html>
+
+
