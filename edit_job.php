@@ -50,9 +50,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_job'])) {
 		<h2>تعديل وظيفة</h2>
 		<?php if (!empty($error)) echo '<p class="error">'.htmlspecialchars($error).'</p>'; ?>
 		<form method='post'>
-			<label>عنوان الوظيفة</label>
+			<label>اسم الوظيفة</label>
 			<input class='input' name='title' value='<?php echo htmlspecialchars($job['title']); ?>' required>
-			<label>الموقع</label>
+			<label>gps</label>
 			<input class='input' name='location' value='<?php echo htmlspecialchars($job['location']); ?>'>
 			<label>وصف الوظيفة</label>
 			<textarea class='input' name='description' required><?php echo htmlspecialchars($job['description']); ?></textarea>

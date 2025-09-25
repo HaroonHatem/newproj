@@ -43,7 +43,9 @@ if (session_status() == PHP_SESSION_NONE) session_start();
         }
       ?>
       <li>
-        <a href="notifications.php" style="background-color:#007bff; color:white; padding:5px 10px; border-radius:5px; display:inline-flex; align-items:center; gap:6px;">
+        <a href="notifications.php" style="background-color:#007bff; color:white;
+                                           padding:5px 10px; border-radius:5px;
+                                           display:inline-flex; align-items:center; gap:6px;">
           الإشعارات
           <?php if ($notif_count > 0): ?>
             <span style="background:#dc3545; color:#fff; border-radius:50%; padding:2px 6px; font-size:12px; line-height:1; display:inline-block; min-width:18px; text-align:center;">
@@ -65,9 +67,9 @@ if (session_status() == PHP_SESSION_NONE) session_start();
       <li style="color: #2c3e50; font-weight: bold; padding: 5px 10px;">
         مرحباً، <?php echo htmlspecialchars($_SESSION['user_name']); ?>
         <?php if(!empty($_SESSION['is_admin'])): ?>
-          <span style="font-size: 12px; color: #8e44ad;">(مدير)</span>
+          <span style="font-size: 15px; color: #8e44ad;">(مدير)</span>
         <?php elseif($_SESSION['user_type'] == 'graduate'): ?>
-          <span style="font-size: 12px; color: #27ae60;">(خريج)</span>
+          <span style="font-size: 13px; color:rgb(7, 90, 41);">(خريج)</span>
         <?php elseif($_SESSION['user_type'] == 'company'): ?>
           <?php
           // Get company verification status for navbar display
@@ -80,11 +82,11 @@ if (session_status() == PHP_SESSION_NONE) session_start();
             $company_data = $result->fetch_assoc();
           }
           ?>
-          <span style="font-size: 12px; color: #3498db;">(شركة)</span>
+          <span style="font-size: 13px; color:rgb(46, 116, 163);">(شركة)</span>
           <?php if (isset($company_data) && !$company_data['is_verified']): ?>
             <span style="font-size: 10px; color: #e74c3c; margin-right: 5px;">⏳ غير موثق</span>
           <?php elseif (isset($company_data) && $company_data['is_verified']): ?>
-            <span style="font-size: 10px; color: #27ae60; margin-right: 5px;">✓ موثق</span>
+            <span style="font-size: 10px; color:rgb(21, 76, 44); margin-right: 5px;">✓ موثق</span>
           <?php endif; ?>
         <?php endif; ?>
       </li>

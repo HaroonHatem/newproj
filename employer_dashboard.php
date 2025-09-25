@@ -123,7 +123,7 @@ $jobs = $stmt->get_result(); ?>
                                     }
                                     if ($jobs->num_rows > 0): ?><table class='table'>
                     <tr>
-                        <th>العنوان</th>
+                        <th>اسم الوظيفة</th>
                         <th>الموقع</th>
                         <th>تاريخ</th>
                         <th>إجراءات</th>

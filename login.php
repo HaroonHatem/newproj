@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!empty($error)) echo '<p class="error">' . htmlspecialchars($error) . '</p>'; 
       ?>
       <div style="margin-bottom:10px;">
-        <button class="btn" type="button" onclick="if(document.referrer){history.back();}else{window.location.href='index.php';}">عودة</button>
+        <button class="btn" type="button" onclick="if(document.referrer){history.back();}else{window.location.href='index.php';}"><- عودة</button>
       </div>
       <form method="post" autocomplete="off">
         <label>البريد الإلكتروني</label>

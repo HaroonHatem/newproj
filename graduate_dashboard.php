@@ -143,7 +143,8 @@ $res = $conn->query("SELECT id, name, university, specialization, phone, cv_file
                 <a href="chat.php?conversation_id=<?php echo $app['conversation_id']; ?>" class="btn btn-apply">
                   محادثة
                   <?php if ($app['unread_count'] > 0): ?>
-                    <span style="background: #dc3545; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; margin-right: 5px;">
+                    <span style="background: #dc3545; color: white; border-radius: 50%; 
+                    padding: 2px 6px; font-size: 10px; margin-right: 5px;">
                       <?php echo $app['unread_count']; ?>
                     </span>
                   <?php endif; ?>
@@ -177,7 +178,7 @@ $res = $conn->query("SELECT id, name, university, specialization, phone, cv_file
           </div>
         <?php endwhile; ?>
       <?php else: ?>
-        <p>لا توجد خريجين.</p>
+        <p>لا يوجد خريجين.</p>
       <?php endif; ?>
     </div>
   </div>

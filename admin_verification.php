@@ -218,7 +218,7 @@ $all_company_requests = $stmt4->get_result();
         </div>
         
         <div class="card">
-            <h2>طلبات التحقق المعلقة - الشركات</h2>
+            <h2>طلبات التحقق المتعلقة - الشركات</h2>
             <?php if ($pending_company_requests->num_rows > 0): ?>
                 <?php while ($request = $pending_company_requests->fetch_assoc()): ?>
                     <div class="verification-request">
