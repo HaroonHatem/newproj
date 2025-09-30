@@ -29,7 +29,7 @@ $user_data = $user_result->fetch_assoc();
 // نقطة نهاية AJAX (تعيد JSON)
 if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     $k = '%' . $keyword . '%';
-    $stmt = $conn->prepare("SELECT id, name, university, specialization, phone, cv_file FROM users WHERE user_type='graduate' AND (name LIKE ? OR university LIKE ? OR specialization LIKE ?) ORDER BY created_at DESC");
+    $stmt = $conn->prepare("SELECT id, name, university, specialization, phone, cv_file FROM users WHERE user_type='graduate' AND email NOT IN ('haroonhatem34@gmail.com','hamzahmisr@gmail.com') AND (name LIKE ? OR university LIKE ? OR specialization LIKE ?) ORDER BY created_at DESC");
     $stmt->bind_param('sss', $k, $k, $k);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -59,7 +59,7 @@ $stmt_apps->execute();
 $user_applications = $stmt_apps->get_result();
 
 // عرض الصفحة (غير AJAX)
-$res = $conn->query("SELECT id, name, university, specialization, phone, cv_file FROM users WHERE user_type='graduate' ORDER BY created_at DESC");
+$res = $conn->query("SELECT id, name, university, specialization, phone, cv_file FROM users WHERE user_type='graduate' AND email NOT IN ('haroonhatem34@gmail.com','hamzahmisr@gmail.com') ORDER BY created_at DESC");
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -185,4 +185,5 @@ $res = $conn->query("SELECT id, name, university, specialization, phone, cv_file
 </main>
 <script src="assets/js/script.js"></script>
 </body>
-</html>\r\n
+</html>
+

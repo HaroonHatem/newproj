@@ -8,8 +8,6 @@ if (!isset($_SESSION['is_admin']) || !$_SESSION['is_admin']) {
     exit();
 }
 
-$admin_id = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : (int)($_SESSION['user_id'] ?? 0);
-
 // Handle approval/rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && isset($_POST['request_id']) && isset($_POST['request_type'])) {
@@ -112,11 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get pending graduate verification requests
 $stmt = $conn->prepare('
-    SELECT gvr.*, u.name as user_name, u.email as user_email
+    SELECT gvr.*, u.name as user_name, u.email as user_email 
     FROM graduate_verification_requests gvr 
     JOIN users u ON gvr.user_id = u.id 
-    LEFT JOIN admins filter_admin ON LOWER(u.email) = LOWER(filter_admin.email)
-    WHERE gvr.status = ? AND filter_admin.id IS NULL
+    WHERE gvr.status = ? AND u.email NOT IN ("haroonhatem34@gmail.com","hamzahmisr@gmail.com")
     ORDER BY gvr.submitted_at ASC
 ');
 $status = 'pending';
@@ -126,11 +123,10 @@ $pending_graduate_requests = $stmt->get_result();
 
 // Get pending company verification requests
 $stmt2 = $conn->prepare('
-    SELECT cvr.*, u.name as user_name, u.email as user_email
+    SELECT cvr.*, u.name as user_name, u.email as user_email 
     FROM company_verification_requests cvr 
     JOIN users u ON cvr.user_id = u.id 
-    LEFT JOIN admins filter_admin ON LOWER(u.email) = LOWER(filter_admin.email)
-    WHERE cvr.status = ? AND filter_admin.id IS NULL
+    WHERE cvr.status = ? AND u.email NOT IN ("haroonhatem34@gmail.com","hamzahmisr@gmail.com")
     ORDER BY cvr.submitted_at ASC
 ');
 $stmt2->bind_param('s', $status);
@@ -143,9 +139,8 @@ $stmt3 = $conn->prepare('
            admin.name as admin_name, "graduate" as request_type
     FROM graduate_verification_requests gvr 
     JOIN users u ON gvr.user_id = u.id 
-    LEFT JOIN admins admin ON gvr.reviewed_by = admin.id
-    LEFT JOIN admins filter_admin ON LOWER(u.email) = LOWER(filter_admin.email)
-    WHERE filter_admin.id IS NULL
+    LEFT JOIN users admin ON gvr.reviewed_by = admin.id
+    WHERE u.email NOT IN ("haroonhatem34@gmail.com","hamzahmisr@gmail.com")
     ORDER BY gvr.submitted_at DESC
 ');
 $stmt3->execute();
@@ -157,9 +152,8 @@ $stmt4 = $conn->prepare('
            admin.name as admin_name, "company" as request_type
     FROM company_verification_requests cvr 
     JOIN users u ON cvr.user_id = u.id 
-    LEFT JOIN admins admin ON cvr.reviewed_by = admin.id
-    LEFT JOIN admins filter_admin ON LOWER(u.email) = LOWER(filter_admin.email)
-    WHERE filter_admin.id IS NULL
+    LEFT JOIN users admin ON cvr.reviewed_by = admin.id
+    WHERE u.email NOT IN ("haroonhatem34@gmail.com","hamzahmisr@gmail.com")
     ORDER BY cvr.submitted_at DESC
 ');
 $stmt4->execute();
@@ -348,4 +342,4 @@ $all_company_requests = $stmt4->get_result();
         </div>
     </main>
 </body>
-</html>\r\n
+</html>

@@ -2,14 +2,6 @@
 CREATE DATABASE IF NOT EXISTS `newproj` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE `newproj`;
 
-CREATE TABLE IF NOT EXISTS admins (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(150) NOT NULL,
-  email VARCHAR(150) NOT NULL UNIQUE,
-  password VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS users (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
@@ -65,7 +57,7 @@ CREATE TABLE IF NOT EXISTS graduate_verification_requests (
   reviewed_at TIMESTAMP NULL,
   reviewed_by INT DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (reviewed_by) REFERENCES admins(id) ON DELETE SET NULL
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Company verification requests table
@@ -84,7 +76,7 @@ CREATE TABLE IF NOT EXISTS company_verification_requests (
   reviewed_at TIMESTAMP NULL,
   reviewed_by INT DEFAULT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (reviewed_by) REFERENCES admins(id) ON DELETE SET NULL
+  FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Add company location to users table
@@ -132,39 +124,4 @@ CREATE TABLE IF NOT EXISTS notifications (
   is_read BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Admin-only chat tables
-CREATE TABLE IF NOT EXISTS admin_conversations (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  created_by INT NOT NULL,
-  other_admin_id INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (created_by) REFERENCES admins(id) ON DELETE CASCADE,
-  FOREIGN KEY (other_admin_id) REFERENCES admins(id) ON DELETE CASCADE,
-  UNIQUE KEY unique_admin_pair (created_by, other_admin_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS admin_messages (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  conversation_id INT NOT NULL,
-  sender_id INT NOT NULL,
-  message TEXT NOT NULL,
-  is_read BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (conversation_id) REFERENCES admin_conversations(id) ON DELETE CASCADE,
-  FOREIGN KEY (sender_id) REFERENCES admins(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- Account removals log
-CREATE TABLE IF NOT EXISTS account_removals (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  removed_user_email VARCHAR(150) NOT NULL,
-  removed_user_name VARCHAR(150) DEFAULT NULL,
-  removed_user_type ENUM('graduate','company') DEFAULT NULL,
-  reason TEXT DEFAULT NULL,
-  removed_by INT DEFAULT NULL,
-  removed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (removed_by) REFERENCES admins(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
