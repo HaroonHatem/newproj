@@ -22,6 +22,8 @@ session_start();
  if(!$job_id){ header('Location: search_jobs.php');
   exit();
  }
+
+
  $stmt=$conn->prepare('SELECT id FROM applications WHERE job_id=? AND user_id=? LIMIT 1');
  $stmt->bind_param('ii',$job_id,$user_id); $stmt->execute();
  $r=$stmt->get_result();
@@ -36,12 +38,16 @@ if($stmt2->execute()) {
     $application_id = $stmt2->insert_id;
     
     // Get job and company details for notification
+    //نستخدم JOIN users u ON j.company_id = u.id حتى نربط كل وظيفة بالشركة التي أضافتها.
+    //شرط WHERE j.id = ? يحدد الوظيفة المعنيّة بالطلب
     $stmt3 = $conn->prepare('SELECT j.title, j.company_id, u.name as company_name FROM jobs j JOIN users u ON j.company_id = u.id WHERE j.id = ?');
     $stmt3->bind_param('i', $job_id);
     $stmt3->execute();
     $job_data = $stmt3->get_result()->fetch_assoc();
     
     // Get graduate name for notification
+    //هنا نبحث في جدول users عن اسم الخريج صاحب الحساب ($user_id) الذي قدّم الطلب.
+    // نحفظ القيمة في المتغير $graduate_name.
     $stmt4 = $conn->prepare('SELECT name FROM users WHERE id = ?');
     $stmt4->bind_param('i', $user_id);
     $stmt4->execute();
