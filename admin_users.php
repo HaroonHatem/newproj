@@ -3,43 +3,32 @@ session_start();
 include 'db.php';
 if (empty($_SESSION['is_admin'])) { header('Location: index.php'); exit(); }
 
-$currentAdminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : (isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0);
-
 // Delete action (POST only, CSRF minimal via session check)
 if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['delete_user_id'])) {
   $deleteId = intval($_POST['delete_user_id']);
-  if ($deleteId === $currentAdminId) {
-    $_SESSION['message'] = '� ����� ��� ���.';
+  if ($deleteId === $_SESSION['user_id']) {
+    $_SESSION['message'] = 'لا يمكنك حذف نفسك.';
   } else {
+    // Block deletion of site owners by email
     $stmtChk = $conn->prepare('SELECT id, name, email, user_type, cv_file FROM users WHERE id=? LIMIT 1');
     $stmtChk->bind_param('i', $deleteId);
     $stmtChk->execute();
     $resChk = $stmtChk->get_result();
     $userRow = $resChk ? $resChk->fetch_assoc() : null;
-    $stmtChk->close();
-
-    if (!$userRow) {
-      $_SESSION['message'] = '��ꫢ��� �� �����.';
+    $emailChk = $userRow ? strtolower($userRow['email']) : '';
+    $owners = ['haroonhatem34@gmail.com','hamzahmisr@gmail.com'];
+    if (in_array($emailChk, $owners, true)) {
+      $_SESSION['message'] = 'لا يمكن حذف مالكي الموقع.';
+    } else if (!$userRow) {
+      $_SESSION['message'] = 'المستخدم غير موجود.';
     } else {
-      // Do not allow deleting accounts that are registered as admins
-      $adminGuard = $conn->prepare('SELECT id FROM admins WHERE LOWER(email) = LOWER(?) LIMIT 1');
-      if ($adminGuard) {
-        $adminGuard->bind_param('s', $userRow['email']);
-        $adminGuard->execute();
-        $adminRes = $adminGuard->get_result();
-        if ($adminRes && $adminRes->num_rows > 0) {
-          $_SESSION['message'] = '� ���� ��� ���� ������.';
-          $adminGuard->close();
-          header('Location: admin_users.php');
-          exit();
-        }
-        $adminGuard->close();
-      }
-
       $conn->begin_transaction();
       try {
+        // Cleanup uploaded files for graduates
         if ($userRow['user_type'] === 'graduate') {
+          // CV file on users table
           if (!empty($userRow['cv_file']) && file_exists($userRow['cv_file'])) { @unlink($userRow['cv_file']); }
+          // Certificate file from graduate_verification_requests
           $gvs = $conn->prepare('SELECT certificate_file FROM graduate_verification_requests WHERE user_id=?');
           $gvs->bind_param('i', $deleteId);
           $gvs->execute();
@@ -47,11 +36,11 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['delete_user_id'])) {
           while ($g = $gvr->fetch_assoc()) {
             if (!empty($g['certificate_file']) && file_exists($g['certificate_file'])) { @unlink($g['certificate_file']); }
           }
-          $gvs->close();
           $conn->query('DELETE FROM graduate_verification_requests WHERE user_id='.(int)$deleteId);
         }
-
+        // Cleanup uploaded files for companies
         if ($userRow['user_type'] === 'company') {
+          // Company doc from company_verification_requests
           $cvs = $conn->prepare('SELECT commercial_register_file FROM company_verification_requests WHERE user_id=?');
           $cvs->bind_param('i', $deleteId);
           $cvs->execute();
@@ -59,29 +48,29 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['delete_user_id'])) {
           while ($c = $cvr->fetch_assoc()) {
             if (!empty($c['commercial_register_file']) && file_exists($c['commercial_register_file'])) { @unlink($c['commercial_register_file']); }
           }
-          $cvs->close();
           $conn->query('DELETE FROM company_verification_requests WHERE user_id='.(int)$deleteId);
+          // Jobs and their files (no files for jobs, but applications and chats cascade)
         }
 
-        $reason = '�� ���� �饫�� �� �� �靧��� ��� ����埘 ��頟� ���뭡.';
+        // Log removal for future login messaging
+        $reason = 'تمت إزالة الحساب من قبل الإدارة لعدم استيفاء متطلبات المنصة.';
         $log = $conn->prepare('INSERT INTO account_removals (removed_user_email, removed_user_name, removed_user_type, reason, removed_by) VALUES (?,?,?,?,?)');
-        $log->bind_param('ssssi', $userRow['email'], $userRow['name'], $userRow['user_type'], $reason, $currentAdminId);
+        $log->bind_param('ssssi', $userRow['email'], $userRow['name'], $userRow['user_type'], $reason, $_SESSION['user_id']);
         $log->execute();
-        $log->close();
 
+        // Delete the user (will cascade delete jobs, applications, chats, notifications)
         $stmt = $conn->prepare('DELETE FROM users WHERE id=?');
         $stmt->bind_param('i', $deleteId);
         if ($stmt->execute()) {
           $conn->commit();
-          $_SESSION['message'] = '�� ��� ��ꫢ��� ����� ����� ��ꩢ��.';
+          $_SESSION['message'] = 'تم حذف المستخدم وجميع آثاره المرتبطة.';
         } else {
           $conn->rollback();
-          $_SESSION['message'] = '�㨩 �饨�.';
+          $_SESSION['message'] = 'تعذر الحذف.';
         }
-        $stmt->close();
       } catch (Exception $e) {
         $conn->rollback();
-        $_SESSION['message'] = '�� ��럘 �饨�: '.$e->getMessage();
+        $_SESSION['message'] = 'خطأ أثناء الحذف: '.$e->getMessage();
       }
     }
   }
@@ -89,17 +78,14 @@ if ($_SERVER['REQUEST_METHOD']==='POST' && isset($_POST['delete_user_id'])) {
   exit();
 }
 
-$res = $conn->query("SELECT u.id, u.name, u.email, u.user_type, u.created_at
-FROM users u
-LEFT JOIN admins a ON LOWER(u.email) = LOWER(a.email)
-WHERE a.id IS NULL
-ORDER BY u.created_at DESC");
+// Do not list site owners in the admin list
+$res = $conn->query("SELECT id, name, email, user_type, created_at FROM users WHERE LOWER(email) NOT IN ('haroonhatem34@gmail.com','hamzahmisr@gmail.com') ORDER BY created_at DESC");
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <title>�靧��� - ��ꫢ�����</title>
+  <title>الإدارة - المستخدمون</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="stylesheet" href="assets/css/style.css">
   <style>
@@ -110,36 +96,38 @@ ORDER BY u.created_at DESC");
 <?php include 'navbar.php'; ?>
 <main class="container">
   <div class="card">
-    <h2>����� ��ꫢ�����</h2>
+    <h2>إدارة المستخدمين</h2>
     <?php if(isset($_SESSION['message'])){ echo '<p class="success">'.htmlspecialchars($_SESSION['message']).'</p>'; unset($_SESSION['message']); } ?>
     <?php if ($res && $res->num_rows>0): ?>
     <table class="table">
       <tr>
         <th>#</th>
-        <th>�韫�</th>
-        <th>�頩�</th>
-        <th>�����</th>
-        <th>����</th>
-        <th>�����</th>
+        <th>الاسم</th>
+        <th>البريد</th>
+        <th>النوع</th>
+        <th>تاريخ</th>
+        <th>إجراء</th>
       </tr>
       <?php while($u=$res->fetch_assoc()): ?>
       <tr>
         <td><?php echo $u['id']; ?></td>
         <td><?php echo htmlspecialchars($u['name']); ?></td>
         <td><?php echo htmlspecialchars($u['email']); ?></td>
-        <td><?php echo $u['user_type']==='company'?'���':'���'; ?></td>
+        <td><?php echo $u['user_type']==='company'?'شركة':'خريج'; ?></td>
         <td><?php echo $u['created_at']; ?></td>
         <td>
-          <form method="post" onsubmit="return confirm('�� ��� ��� 쨟 ��ꫢ���?');">
+          <form method="post" onsubmit="return confirm('هل تريد حذف هذا المستخدم؟');">
             <input type="hidden" name="delete_user_id" value="<?php echo $u['id']; ?>">
-            <button class="danger" type="submit">���</button>
+            <button class="danger" type="submit">حذف</button>
           </form>
         </td>
       </tr>
       <?php endwhile; ?>
     </table>
-    <?php else: ?><p>� ���� ꫢ�����.</p><?php endif; ?>
+    <?php else: ?><p>لا يوجد مستخدمون.</p><?php endif; ?>
   </div>
 </main>
 </body>
 </html>
+
+
