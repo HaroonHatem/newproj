@@ -7,7 +7,7 @@ $keyword = isset($_GET['q']) ? trim($_GET['q']) : '';
 // نقطة نهاية AJAX (تعيد JSON)
 if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     $k = '%' . $keyword . '%';
-    $stmt = $conn->prepare("SELECT id, name, university, specialization, phone, cv_file, is_verified, verification_status FROM users WHERE user_type='graduate' AND email NOT IN ('haroonhatem34@gmail.com','hamzahmisr@gmail.com') AND (name LIKE ? OR university LIKE ? OR specialization LIKE ?) ORDER BY is_verified DESC, created_at DESC");
+    $stmt = $conn->prepare("SELECT id, name, university, specialization, phone, cv_file, is_verified, verification_status FROM users WHERE user_type='graduate' AND (name LIKE ? OR university LIKE ? OR specialization LIKE ?) ORDER BY is_verified DESC, created_at DESC");
     $stmt->bind_param('sss', $k, $k, $k);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -21,7 +21,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
 }
 
 // عرض الصفحة (غير AJAX)
-$res = $conn->query("SELECT id, name, university, specialization, phone, cv_file, is_verified, verification_status FROM users WHERE user_type='graduate' AND email NOT IN ('haroonhatem34@gmail.com','hamzahmisr@gmail.com') ORDER BY is_verified DESC, created_at DESC");
+$res = $conn->query("SELECT id, name, university, specialization, phone, cv_file, is_verified, verification_status FROM users WHERE user_type='graduate' ORDER BY is_verified DESC, created_at DESC");
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -67,4 +67,4 @@ $res = $conn->query("SELECT id, name, university, specialization, phone, cv_file
 </main>
 <script src="assets/js/script.js"></script>
 </body>
-</html>
+</html>\r\n
